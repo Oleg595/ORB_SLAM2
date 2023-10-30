@@ -24,8 +24,12 @@
 #include<fstream>
 #include<iomanip>
 #include<chrono>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include<opencv2/core/core.hpp>
+#include "./image_processing/ImagePreprocessing.h"
 
 #include<System.h>
 
@@ -46,12 +50,13 @@ int main(int argc, char **argv)
     vector<string> vstrImageLeft;
     vector<string> vstrImageRight;
     vector<double> vTimestamps;
+    auto processor = getCurrentPreprocessing();
     LoadImages(string(argv[3]), vstrImageLeft, vstrImageRight, vTimestamps);
 
     const int nImages = vstrImageLeft.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,false);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -80,8 +85,11 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #endif
+
+        processor->processImage(imLeft);
+        processor->processImage(imRight);
 
         // Pass the images to the SLAM system
         SLAM.TrackStereo(imLeft,imRight,tframe);
@@ -89,7 +97,7 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #endif
 
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
@@ -105,6 +113,8 @@ int main(int argc, char **argv)
 
         if(ttrack<T)
             usleep((T-ttrack)*1e6);
+//        else
+//            return -1;
     }
 
     // Stop all threads
@@ -122,7 +132,7 @@ int main(int argc, char **argv)
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
     // Save camera trajectory
-    SLAM.SaveTrajectoryKITTI("CameraTrajectory.txt");
+    SLAM.SaveTrajectoryKITTI("03.txt");
 
     return 0;
 }

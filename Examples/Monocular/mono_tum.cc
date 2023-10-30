@@ -23,6 +23,10 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "./image_processing/ImagePreprocessing.h"
 
 #include<opencv2/core/core.hpp>
 
@@ -46,6 +50,7 @@ int main(int argc, char **argv)
     vector<double> vTimestamps;
     string strFile = string(argv[3])+"/rgb.txt";
     LoadImages(strFile, vstrImageFilenames, vTimestamps);
+    cout << "Load image is success" << endl;
 
     int nImages = vstrImageFilenames.size();
 
@@ -62,6 +67,7 @@ int main(int argc, char **argv)
 
     // Main loop
     cv::Mat im;
+    ImagePreprocessing* preprocessor = getCurrentPreprocessing();
     for(int ni=0; ni<nImages; ni++)
     {
         // Read image from file
@@ -78,8 +84,11 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #endif
+
+        // Preprocess image
+        preprocessor->processImage(im);
 
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im,tframe);
@@ -87,7 +96,7 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #endif
 
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
@@ -120,7 +129,7 @@ int main(int argc, char **argv)
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM(std::string("KeyFrameTrajectory_") + preprocessor->getClassName() + ".txt");
 
     return 0;
 }

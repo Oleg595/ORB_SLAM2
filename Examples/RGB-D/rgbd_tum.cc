@@ -23,6 +23,9 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include<opencv2/core/core.hpp>
 
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #endif
 
         // Pass the image to the SLAM system
@@ -100,7 +103,7 @@ int main(int argc, char **argv)
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #else
-        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #endif
 
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
@@ -133,7 +136,7 @@ int main(int argc, char **argv)
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
     // Save camera trajectory
-    SLAM.SaveTrajectoryTUM("CameraTrajectory.txt");
+    SLAM.SaveTrajectoryTUM("03.txt");
     SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");   
 
     return 0;
